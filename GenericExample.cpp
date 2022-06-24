@@ -1,4 +1,4 @@
-#include <array>
+ï»¿#include <array>
 #include <tuple>
 #include <iostream>
 #include <iterator>
@@ -8,7 +8,7 @@ class Dog
 {
 public:
 	Dog(int age) :age(age) {}
-	void Bark() { std::cout << "ÍôÍô" << std::endl; }
+	void Bark() { std::cout << "æ±ªæ±ª" << std::endl; }
 	int GetAge() { return age; }
 private:
 	int age;
@@ -18,7 +18,7 @@ class Cat
 {
 public:
 	Cat(int age) :age(age) {}
-	void Bark() { std::cout << "ß÷ß÷" << std::endl; }
+	void Bark() { std::cout << "å–µå–µ" << std::endl; }
 	int GetAge() { return age; }
 private:
 	int age;
