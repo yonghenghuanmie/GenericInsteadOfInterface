@@ -72,26 +72,11 @@ public:
 	template<typename Callable, typename Result = std::invoke_result_t<Callable, decltype(std::get<0>(tuple))>,
 		bool is_void = std::is_same_v<void, Result>, typename Allow = std::enable_if_t<is_void> >
 		requires requires(Callable callable, Tuple& tuple) { callable(std::get<0>(tuple)); }
-	void map(Callable callable)
+	void foreach(Callable callable)
 	{
-		map(callable, std::make_index_sequence<std::tuple_size_v<Tuple>>());
+		foreach(callable, std::make_index_sequence<std::tuple_size_v<Tuple>>());
 	}
 
-private:
-	template<typename Callable, std::size_t Index, std::size_t... Rest>
-	void map(Callable callable, std::index_sequence<Index, Rest...>)
-	{
-		callable(std::get<Index>(tuple));
-		map(callable, std::index_sequence<Rest...>());
-	}
-
-	template<typename Callable, std::size_t Index>
-	void map(Callable callable, std::index_sequence<Index>)
-	{
-		callable(std::get<Index>(tuple));
-	}
-
-public:
 	template<typename Callable, typename Result = std::invoke_result_t<Callable, decltype(std::get<0>(tuple))>,
 		bool is_void = std::is_same_v<void, Result>, typename Allow = std::enable_if_t<!is_void> >
 		requires requires(Callable callable, Tuple& tuple) { callable(std::get<0>(tuple)); }
@@ -104,6 +89,19 @@ public:
 	}
 
 private:
+	template<typename Callable, std::size_t Index, std::size_t... Rest>
+	void foreach(Callable callable, std::index_sequence<Index, Rest...>)
+	{
+		callable(std::get<Index>(tuple));
+		foreach(callable, std::index_sequence<Rest...>());
+	}
+
+	template<typename Callable, std::size_t Index>
+	void foreach(Callable callable, std::index_sequence<Index>)
+	{
+		callable(std::get<Index>(tuple));
+	}
+
 	template<typename Result, std::size_t Size, typename Callable, std::size_t Index, std::size_t... Rest>
 	void map(std::array<Result, Size>& results, Callable callable, std::index_sequence<Index, Rest...>)
 	{
@@ -132,7 +130,7 @@ int main()
 			auto container = std::tuple_cat(std::move(container_reference), std::make_tuple<Dog>({ "charlie", 5 }));
 
 			IterateTupleElement iterator(container);
-			iterator.map([](auto&& animal) {animal.Bark(); });
+			iterator.foreach([](auto&& animal) {animal.Bark(); });
 
 			std::cout << "Names: ";
 			for (auto&& name : iterator.map([](auto&& animal) {return animal.GetName(); }))
