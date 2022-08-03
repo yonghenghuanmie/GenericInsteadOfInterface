@@ -1,9 +1,13 @@
 ﻿#include <array>
 #include <tuple>
+#include <vector>
 #include <string>
+#include <variant>
 #include <utility>
+#include <concepts>
 #include <iostream>
 #include <iterator>
+#include <algorithm>
 #include <type_traits>
 
 
@@ -14,7 +18,7 @@ public:
 	void Bark() { std::cout << "汪汪" << std::endl; }
 	std::string GetName() { return name; }
 	int GetAge() { return age; }
-private:
+
 	std::string name;
 	int age;
 };
@@ -26,11 +30,21 @@ public:
 	void Bark() { std::cout << "喵喵" << std::endl; }
 	std::string GetName() { return name; }
 	int GetAge() { return age; }
-private:
+
 	std::string name;
 	int age;
 };
 
+template<typename T>
+concept Animal = requires(T animal)
+{
+	{animal.GetName()}->std::same_as<std::string>;
+	animal.Bark();
+	animal.age += 0;
+};
+
+template<typename... Rest> requires (Animal<Rest>&&...)
+using Pet = std::variant<Rest...>;
 
 template<std::size_t Target, typename Tuple>
 	requires (std::tuple_size_v<Tuple> > 0 && Target < std::tuple_size_v<Tuple>) &&
@@ -146,5 +160,25 @@ int main()
 			}
 		}
 	}
+
+	std::cout << "\n--- second way ---\n";
+	std::vector<Pet<Dog, Cat>> pets;
+	pets.emplace_back(Dog{ "alice", 2 });
+	pets.emplace_back(Cat{ "bob", 3 });
+	pets.emplace_back(Cat{ "charlie", 5 });
+	std::ranges::for_each(pets, [](auto&& animal) {std::visit([](auto&& pet) {std::cout << pet.GetName() << ' '; pet.Bark(); }, animal); });
+	std::cout << "<<< 5 years later <<<\n";
+	for (auto iterator = pets.begin(); iterator != pets.end();)
+	{
+		if (std::visit([](auto&& pet) {if (pet.age += 5; pet.age > 8)return true; else return false; }, *iterator))
+		{
+			iterator = pets.erase(iterator);
+			continue;
+		}
+		else
+			++iterator;
+	}
+	std::ranges::for_each(pets, [](auto&& animal) {std::visit([](auto&& pet) {std::cout << pet.GetName() << ' '; pet.Bark(); }, animal); });
+
 	return 0;
 }
