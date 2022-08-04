@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iterator>
 #include <algorithm>
+#include <functional>
 #include <type_traits>
 
 
@@ -36,15 +37,15 @@ public:
 };
 
 template<typename T>
-concept Animal = requires(T animal)
+concept ANIMAL = requires(T animal)
 {
 	{animal.GetName()}->std::same_as<std::string>;
 	animal.Bark();
 	animal.age += 0;
 };
 
-template<typename... Rest> requires (Animal<Rest>&&...)
-using Pet = std::variant<Rest...>;
+template<typename... Rest> requires (ANIMAL<Rest>&&...)
+using Animal = std::variant<Rest...>;
 
 template<std::size_t Target, typename Tuple>
 	requires (std::tuple_size_v<Tuple> > 0 && Target < std::tuple_size_v<Tuple>) &&
@@ -80,6 +81,7 @@ template<typename Tuple>
 	requires requires(Tuple& tuple) { std::get<0>(tuple); }
 class IterateTupleElement
 {
+	Tuple& tuple;
 public:
 	IterateTupleElement(Tuple& tuple) :tuple(tuple) {}
 
@@ -128,10 +130,7 @@ private:
 	{
 		results[Index] = callable(std::get<Index>(tuple));
 	}
-
-	Tuple& tuple;
 };
-
 
 int main()
 {
@@ -162,11 +161,14 @@ int main()
 	}
 
 	std::cout << "\n--- second way ---\n";
-	std::vector<Pet<Dog, Cat>> pets;
+	using Pet = Animal<Dog, Cat>;
+	std::vector<Pet> pets;
 	pets.emplace_back(Dog{ "alice", 2 });
 	pets.emplace_back(Cat{ "bob", 3 });
 	pets.emplace_back(Cat{ "charlie", 5 });
-	std::ranges::for_each(pets, [](auto&& animal) {std::visit([](auto&& pet) {std::cout << pet.GetName() << ' '; pet.Bark(); }, animal); });
+	auto call_back = [](auto&& pet) {std::cout << pet.GetName() << ' '; pet.Bark(); };
+	auto visit = (void(*)(decltype(call_back)&, Pet&))static_cast<void(*)(decltype(call_back)&&, Pet&&)>(&std::visit<decltype(call_back), Pet>);
+	std::ranges::for_each(pets, std::bind(visit, call_back, std::placeholders::_1));
 	std::cout << "<<< 5 years later <<<\n";
 	for (auto iterator = pets.begin(); iterator != pets.end();)
 	{
