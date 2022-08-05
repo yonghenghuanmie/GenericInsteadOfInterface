@@ -167,7 +167,7 @@ int main()
 	pets.emplace_back(Cat{ "bob", 3 });
 	pets.emplace_back(Cat{ "charlie", 5 });
 	auto call_back = [](auto&& pet) {std::cout << pet.GetName() << ' '; pet.Bark(); };
-	auto visit = (void(*)(decltype(call_back)&, Pet&))static_cast<void(*)(decltype(call_back)&&, Pet&&)>(&std::visit<decltype(call_back), Pet>);
+	auto visit = static_cast<void(*)(decltype(call_back)&, Pet&)>(&std::visit<decltype(call_back)&, Pet&>);
 	std::ranges::for_each(pets, std::bind(visit, call_back, std::placeholders::_1));
 	std::cout << "<<< 5 years later <<<\n";
 	for (auto iterator = pets.begin(); iterator != pets.end();)
